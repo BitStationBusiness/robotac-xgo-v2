@@ -125,6 +125,15 @@ namespace robotac_xgos {
 
         posturaInicial()
         abrirGancho()
+
+        // Mostrar carita feliz al iniciar
+        basic.showLeds(`
+            . # . # .
+            . # . # .
+            . . . . .
+            # . . . #
+            . # # # .
+            `)
     }
 
     /**
@@ -138,6 +147,14 @@ namespace robotac_xgos {
     //% segundos.min=0 segundos.max=10 segundos.defl=1
     //% weight=90
     export function avanzar(velocidad: number, segundos: number): void {
+        // Mostrar flecha hacia adelante (abajo)
+        basic.showLeds(`
+            . . # . .
+            . . # . .
+            # . # . #
+            . # # # .
+            . . # . .
+            `)
         moverTemporal(DireccionMovimiento.Avanzar, velocidad, segundos)
     }
 
@@ -152,6 +169,14 @@ namespace robotac_xgos {
     //% segundos.min=0 segundos.max=10 segundos.defl=1
     //% weight=80
     export function retroceder(velocidad: number, segundos: number): void {
+        // Mostrar flecha hacia atrás (arriba)
+        basic.showLeds(`
+            . . # . .
+            . # # # .
+            # . # . #
+            . . # . .
+            . . # . .
+            `)
         moverTemporal(DireccionMovimiento.Retroceder, velocidad, segundos)
     }
 
@@ -166,6 +191,14 @@ namespace robotac_xgos {
     //% segundos.min=0 segundos.max=10 segundos.defl=1
     //% weight=70
     export function girarIzquierda(velocidad: number, segundos: number): void {
+        // Mostrar flecha a la izquierda (según configuración de la placa)
+        basic.showLeds(`
+            . . # . .
+            . . . # .
+            # # # # #
+            . . . # .
+            . . # . .
+            `)
         girarTemporal(DireccionGiro.Izquierda, velocidad, segundos)
     }
 
@@ -180,6 +213,14 @@ namespace robotac_xgos {
     //% segundos.min=0 segundos.max=10 segundos.defl=1
     //% weight=60
     export function girarDerecha(velocidad: number, segundos: number): void {
+        // Mostrar flecha a la derecha (según configuración de la placa)
+        basic.showLeds(`
+            . . # . .
+            . # . . .
+            # # # # #
+            . # . . .
+            . . # . .
+            `)
         girarTemporal(DireccionGiro.Derecha, velocidad, segundos)
     }
 
@@ -191,6 +232,14 @@ namespace robotac_xgos {
     //% weight=50
     export function abrirGancho(): void {
         clampState = 0
+        // Mostrar gancho abierto
+        basic.showLeds(`
+            # . . . #
+            # . . . #
+            # . . . #
+            # . . . #
+            # . . . #
+            `)
         moverGancho(GANCHO_ABIERTO)
     }
 
@@ -202,6 +251,14 @@ namespace robotac_xgos {
     //% weight=40
     export function cerrarGancho(): void {
         clampState = 1
+        // Mostrar gancho cerrado
+        basic.showLeds(`
+            . # . # .
+            . # . # .
+            # # . # #
+            . # . # .
+            . # . # .
+            `)
         moverGancho(GANCHO_CERRADO)
     }
 
