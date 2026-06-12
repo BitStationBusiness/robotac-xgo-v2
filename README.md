@@ -1,24 +1,36 @@
+# ROBOTAC XGOS V2
 
-> Open this page at [https://bitstationbusiness.github.io/robotac-xgo-v2/](https://bitstationbusiness.github.io/robotac-xgo-v2/)
+Extensión educativa para controlar XGOS V2 desde MakeCode usando bloques simples.
 
-## Use as Extension
+## Bloques disponibles
 
-This repository can be added as an **extension** in MakeCode.
+- iniciar XGOS
+- avanzar velocidad durante segundos
+- retroceder velocidad durante segundos
+- girar izquierda velocidad durante segundos
+- girar derecha velocidad durante segundos
+- abrir gancho
+- cerrar gancho
+- alternar gancho
 
-* open [https://makecode.microbit.org/](https://makecode.microbit.org/)
-* click on **New Project**
-* click on **Extensions** under the gearwheel menu
-* search for **https://github.com/bitstationbusiness/robotac-xgo-v2** and import
+## Uso recomendado
 
-## Edit this project
+En `on start` usar:
 
-To edit this repository in MakeCode.
+```blocks
+iniciar XGOS
+```
 
-* open [https://makecode.microbit.org/](https://makecode.microbit.org/)
-* click on **Import** then click on **Import URL**
-* paste **https://github.com/bitstationbusiness/robotac-xgo-v2** and click import
+En el botón A usar bloques de movimiento.
 
-#### Metadata (used for search, rendering)
+En el botón B usar:
 
-* for PXT/microbit
-<script src="https://makecode.com/gh-pages-embed.js"></script><script>makeCodeRender("{{ site.makecode.home_url }}", "{{ site.github.owner_name }}/{{ site.github.repository_name }}");</script>
+```blocks
+alternar gancho
+```
+
+## Pines usados
+
+* TX: P14
+* RX: P13
+* Baudrate: 115200

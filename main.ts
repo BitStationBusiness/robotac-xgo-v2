@@ -1,135 +1,221 @@
-function girar_izquierda(velocidad: number, tiempo_ms: number) {
-    basic.showLeds(`
-        . . # . .
-        . . . # .
-        # # # # #
-        . . . # .
-        . . # . .
-        `)
-    girar_temporal(xgo.rotate_enum.Left, velocidad, tiempo_ms)
-}
+//% color="#3A4A3F" icon="\uf1b9" block="ROBOTAC XGOS"
+namespace robotac_xgos {
 
-//  =========================
-//  FUNCIONES DE MOVIMIENTO
-//  =========================
-function mover_temporal(direccion: number, velocidad2: number, tiempo_ms2: number) {
-    xgo.move_xgo(direccion, velocidad2)
-    basic.pause(tiempo_ms2)
-    xgo.move_xgo(direccion, 0)
-}
+    let clampState = 0
 
-function detener_movimiento() {
-    xgo.move_xgo(xgo.direction_enum.Forward, 0)
-}
+    const GANCHO_ABIERTO = 0
+    const GANCHO_CERRADO = 196
 
-function detener_giro() {
-    xgo.rotate(xgo.rotate_enum.Left, 0)
-}
-
-//  =========================
-//  BOTONES
-//  =========================
-input.onButtonPressed(Button.A, function on_button_pressed_a() {
-    avanzar(100, 1500)
-    girar_izquierda(100, 1500)
-    girar_derecha(100, 1500)
-    retroceder(100, 1500)
-})
-function cerrar_gancho() {
-    
-    clamp_state = 1
-    xgo.Manipulator_clamp(gancho_cerrado)
-}
-
-//  =========================
-//  FUNCIONES DEL GANCHO
-//  =========================
-function abrir_gancho() {
-    
-    let gancho_abierto = 0
-    clamp_state = 0
-    xgo.Manipulator_clamp(gancho_abierto)
-}
-
-function toggle_gancho() {
-    if (clamp_state == 0) {
-        basic.showLeds(`
-            . # . # .
-            . # . # .
-            # # . # #
-            . # . # .
-            . # . # .
-            `)
-        cerrar_gancho()
-    } else {
-        basic.showLeds(`
-            # . . . #
-            # . . . #
-            # . . . #
-            # . . . #
-            # . . . #
-            `)
-        abrir_gancho()
+    enum DireccionMovimiento {
+        Avanzar,
+        Retroceder
     }
-    
-}
 
-function avanzar(velocidad3: number, tiempo_ms3: number) {
-    basic.showLeds(`
-        . . # . .
-        . . # . .
-        # . # . #
-        . # # # .
-        . . # . .
-        `)
-    mover_temporal(xgo.direction_enum.Forward, velocidad3, tiempo_ms3)
-}
+    enum DireccionGiro {
+        Izquierda,
+        Derecha
+    }
 
-function retroceder(velocidad4: number, tiempo_ms4: number) {
-    basic.showLeds(`
-        . . # . .
-        . # # # .
-        # . # . #
-        . . # . .
-        . . # . .
-        `)
-    mover_temporal(xgo.direction_enum.Backward, velocidad4, tiempo_ms4)
-}
+    function limitar(valor: number, minimo: number, maximo: number): number {
+        if (valor < minimo) {
+            return minimo
+        }
 
-input.onButtonPressed(Button.B, function on_button_pressed_b() {
-    toggle_gancho()
-})
-function girar_temporal(direccion2: number, velocidad5: number, tiempo_ms5: number) {
-    xgo.rotate(direccion2, velocidad5)
-    basic.pause(tiempo_ms5)
-    xgo.rotate(direccion2, 0)
-}
+        if (valor > maximo) {
+            return maximo
+        }
 
-function girar_derecha(velocidad6: number, tiempo_ms6: number) {
-    basic.showLeds(`
-        . . # . .
-        . # . . .
-        # # # # #
-        . # . . .
-        . . # . .
-        `)
-    girar_temporal(xgo.rotate_enum.Right, velocidad6, tiempo_ms6)
-}
+        return valor
+    }
 
-let clamp_state = 0
-let gancho_cerrado = 0
-basic.showLeds(`
-    . # . # .
-    . # . # .
-    . . . . .
-    # . . . #
-    . # # # .
-    `)
-gancho_cerrado = 200
-//  =========================
-//  INICIO DEL ROBOT
-//  =========================
-xgo.init_xgo_serial(SerialPin.P14, SerialPin.P13)
-xgo.execution_action(xgo.action_enum.Default_posture)
-//  Estado inicial del gancho
-abrir_gancho()
+    function segundosAMilisegundos(segundos: number): number {
+        segundos = limitar(segundos, 0, 60)
+        return segundos * 1000
+    }
+
+    function enviarComando(registro: number, valor: number): void {
+        let buffer = pins.createBuffer(9)
+
+        buffer[0] = 0x55
+        buffer[1] = 0x00
+        buffer[2] = 0x09
+        buffer[3] = 0x00
+        buffer[4] = registro
+        buffer[5] = valor
+        buffer[6] = ~(0x09 + 0x00 + registro + valor)
+        buffer[7] = 0x00
+        buffer[8] = 0xAA
+
+        serial.writeBuffer(buffer)
+    }
+
+    function posturaInicial(): void {
+        enviarComando(0x3E, 0xFF)
+        basic.pause(1000)
+    }
+
+    function moverInterno(direccion: DireccionMovimiento, velocidad: number): void {
+        velocidad = limitar(velocidad, 0, 100)
+
+        let valor = 128
+
+        if (direccion == DireccionMovimiento.Avanzar) {
+            valor = Math.map(velocidad, 0, 100, 128, 255)
+        } else {
+            valor = Math.map(velocidad, 0, 100, 128, 0)
+        }
+
+        enviarComando(0x30, valor)
+    }
+
+    function girarInterno(direccion: DireccionGiro, velocidad: number): void {
+        velocidad = limitar(velocidad, 0, 100)
+
+        let valor = 128
+
+        if (direccion == DireccionGiro.Izquierda) {
+            valor = Math.map(velocidad, 0, 100, 128, 255)
+        } else {
+            valor = Math.map(velocidad, 0, 100, 128, 0)
+        }
+
+        enviarComando(0x32, valor)
+    }
+
+    function detenerMovimiento(): void {
+        enviarComando(0x30, 128)
+    }
+
+    function detenerGiro(): void {
+        enviarComando(0x32, 128)
+    }
+
+    function moverTemporal(direccion: DireccionMovimiento, velocidad: number, segundos: number): void {
+        moverInterno(direccion, velocidad)
+        basic.pause(segundosAMilisegundos(segundos))
+        detenerMovimiento()
+    }
+
+    function girarTemporal(direccion: DireccionGiro, velocidad: number, segundos: number): void {
+        girarInterno(direccion, velocidad)
+        basic.pause(segundosAMilisegundos(segundos))
+        detenerGiro()
+    }
+
+    function moverGancho(valor: number): void {
+        valor = limitar(valor, 0, 255)
+        enviarComando(0x71, valor)
+        basic.pause(3000)
+    }
+
+    /**
+     * Inicializa el robot XGOS V2 y deja el gancho abierto.
+     */
+    //% block="iniciar XGOS"
+    //% group="Inicio"
+    //% weight=100
+    export function iniciarXGOS(): void {
+        clampState = 0
+
+        serial.redirect(
+            SerialPin.P14,
+            SerialPin.P13,
+            BaudRate.BaudRate115200
+        )
+
+        posturaInicial()
+        abrirGancho()
+    }
+
+    /**
+     * Avanza durante una cantidad de segundos.
+     * @param velocidad velocidad de 0 a 100
+     * @param segundos tiempo en segundos
+     */
+    //% block="avanzar velocidad $velocidad durante $segundos segundos"
+    //% group="Movimiento"
+    //% velocidad.min=0 velocidad.max=100 velocidad.defl=100
+    //% segundos.min=0 segundos.max=10 segundos.defl=1
+    //% weight=90
+    export function avanzar(velocidad: number, segundos: number): void {
+        moverTemporal(DireccionMovimiento.Avanzar, velocidad, segundos)
+    }
+
+    /**
+     * Retrocede durante una cantidad de segundos.
+     * @param velocidad velocidad de 0 a 100
+     * @param segundos tiempo en segundos
+     */
+    //% block="retroceder velocidad $velocidad durante $segundos segundos"
+    //% group="Movimiento"
+    //% velocidad.min=0 velocidad.max=100 velocidad.defl=100
+    //% segundos.min=0 segundos.max=10 segundos.defl=1
+    //% weight=80
+    export function retroceder(velocidad: number, segundos: number): void {
+        moverTemporal(DireccionMovimiento.Retroceder, velocidad, segundos)
+    }
+
+    /**
+     * Gira a la izquierda durante una cantidad de segundos.
+     * @param velocidad velocidad de 0 a 100
+     * @param segundos tiempo en segundos
+     */
+    //% block="girar izquierda velocidad $velocidad durante $segundos segundos"
+    //% group="Movimiento"
+    //% velocidad.min=0 velocidad.max=100 velocidad.defl=100
+    //% segundos.min=0 segundos.max=10 segundos.defl=1
+    //% weight=70
+    export function girarIzquierda(velocidad: number, segundos: number): void {
+        girarTemporal(DireccionGiro.Izquierda, velocidad, segundos)
+    }
+
+    /**
+     * Gira a la derecha durante una cantidad de segundos.
+     * @param velocidad velocidad de 0 a 100
+     * @param segundos tiempo en segundos
+     */
+    //% block="girar derecha velocidad $velocidad durante $segundos segundos"
+    //% group="Movimiento"
+    //% velocidad.min=0 velocidad.max=100 velocidad.defl=100
+    //% segundos.min=0 segundos.max=10 segundos.defl=1
+    //% weight=60
+    export function girarDerecha(velocidad: number, segundos: number): void {
+        girarTemporal(DireccionGiro.Derecha, velocidad, segundos)
+    }
+
+    /**
+     * Abre el gancho.
+     */
+    //% block="abrir gancho"
+    //% group="Gancho"
+    //% weight=50
+    export function abrirGancho(): void {
+        clampState = 0
+        moverGancho(GANCHO_ABIERTO)
+    }
+
+    /**
+     * Cierra el gancho.
+     */
+    //% block="cerrar gancho"
+    //% group="Gancho"
+    //% weight=40
+    export function cerrarGancho(): void {
+        clampState = 1
+        moverGancho(GANCHO_CERRADO)
+    }
+
+    /**
+     * Cambia el estado del gancho. Si está abierto, lo cierra. Si está cerrado, lo abre.
+     */
+    //% block="alternar gancho"
+    //% group="Gancho"
+    //% weight=30
+    export function alternarGancho(): void {
+        if (clampState == 0) {
+            cerrarGancho()
+        } else {
+            abrirGancho()
+        }
+    }
+}
